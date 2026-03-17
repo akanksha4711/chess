@@ -17,6 +17,11 @@ export const Lobby = () => {
 
   function joinRoom() {
     connectSocket();
+    socket.emit("room:join", roomCode, (response) => {
+      if (!response?.ok)
+        return alert(response.message || "Failed to join room");
+      navigate(`/rooms/${response.room.roomCode}`);
+    });
   }
 
   return (

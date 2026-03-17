@@ -45,7 +45,7 @@ export const logout = createAsyncThunk("auth/logout", async (_, thunkAPI) => {
 export const fetchMe = createAsyncThunk("auth/me", async (_, thunkAPI) => {
   try {
     const res = await api.get("/auth/me");
-    return res.data;
+    return res.data.user;
   } catch (err) {
     return thunkAPI.rejectWithValue(err.message || "Fetch me failed");
   }

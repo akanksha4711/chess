@@ -112,6 +112,54 @@ io.on("connection", (socket) => {
       return ack?.({ ok: false, message: err.message || "Create room failed" });
     }
   });
+
+  socket.on("room:join", (roomCode, ack) => {
+    try {
+      console.log(`A user tried to join the room ${roomCode}`);
+      const existingRoom = rooms.get(roomCode);
+      if (!existingRoom) {
+        return ack?.({ ok: false, message: "Room does not exist" });
+      }
+      const already = existingRoom.players.some(
+        (p) => p.userId.toString() === socket.user._id.toString(),
+      );
+      if (!already) {
+        if (existingRoom.players.length === 2) {
+          return ack?.({ ok: false, message: "Room is full" });
+        }
+        existingRoom.players.push({
+          userId: socket.user._id,
+          name: socket.user.name,
+          socketId: socket.id,
+        });
+      } else {
+        existingRoom.players = existingRoom.players.map((p) => {
+          if (p.userId.toString() === socket.user._id.toString()) {
+            return { ...p, socketId: socket.id };
+          }
+          return p;
+        });
+      }
+      existingRoom.status =
+        existingRoom.players.length === 2 ? "ready" : "waiting";
+      socket.join(roomCode);
+      io.to(roomCode).emit("room:presence", existingRoom);
+      return ack?.({ ok: true, room: existingRoom });
+    } catch (err) {
+      return ack?.({
+        ok: false,
+        message: err.message || "Failed to join the room",
+      });
+    }
+  });
+
+  // "room:leave" - event handler
+  socket.on("room:leave", (roomCode, ack) => {
+    // Goal: remove the current user from the room
+    // If room does not exist return with error: { ok: false, message: "Room does not exist" }
+    // Remove the user by filtering out the player from the room.players
+    // If room is empty rooms.delete(roomCode)
+  });
 });
 
 server.listen(PORT, () => console.log("Sever is listening on port", PORT));
