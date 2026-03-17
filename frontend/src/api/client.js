@@ -6,10 +6,10 @@ const api = axios.create({
 });
 
 // interceptor
-// 1. there is an error
+// 1. there is an error in any api
 // 2. If status code == 401 (Unauthorized)
 // 3. hit the /auth/refresh endpoint
-// 4. After returning from the refresh endpoint, rehit the original request
+// 4. After returning from the refresh endpoint, rehit the original endpoint
 api.interceptors.response.use(
   (response) => response,
   async (error) => {

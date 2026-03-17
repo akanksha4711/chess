@@ -7,6 +7,7 @@ import { ProtectedRoutes } from "./components/ProtectedRoutes";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { fetchMe } from "./slices/authSlice";
+import { Room } from "./pages/Room";
 
 function App() {
   const dispatch = useDispatch();
@@ -22,6 +23,7 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route element={<ProtectedRoutes />}>
           <Route path="/lobby" element={<Lobby />} />
+          <Route path="/rooms/:roomCode" element={<Room />} />
         </Route>
       </Route>
     </Routes>
