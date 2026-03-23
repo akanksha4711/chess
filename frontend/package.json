@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@gustavotoyota/react-chessboard": "^4.1.8",
     "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.13.6",
     "i": "^0.3.7",
