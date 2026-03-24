@@ -49,9 +49,16 @@ export const Room = () => {
     socket.on("game:update", onUpdate);
     // Add "game:over" event listener
 
+    const onEnd = (result) => {
+      alert(result);
+    };
+
+    socket.on("game:over", onEnd);
+
     return () => {
       socket.off("room:presence", onPresence);
       socket.off("game:update", onUpdate);
+      socket.off("game:over", onEnd);
     };
   }, [roomCode, room?.whiteId, user._id]);
 
