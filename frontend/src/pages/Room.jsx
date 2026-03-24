@@ -20,9 +20,6 @@ export const Room = () => {
       if (!response?.ok)
         return alert(response?.message || "Failed to join room");
       setRoom(response.room);
-      setColor(
-        user._id.toString() === room?.whiteId?.toString() ? "White" : "Black",
-      );
     });
 
     socket.emit("game:state", roomCode, (response) => {
@@ -30,6 +27,11 @@ export const Room = () => {
         return alert(response?.message || "Failed to fetch game state");
       setFen(response?.state?.fen);
       setTurn(response?.state?.turn);
+      setColor(
+        user._id.toString() === response?.state?.whiteId.toString()
+          ? "White"
+          : "Black",
+      );
     });
 
     const onPresence = (data) => {
@@ -39,7 +41,7 @@ export const Room = () => {
     socket.on("room:presence", onPresence);
 
     const onUpdate = (state) => {
-      console.log(state.fen);
+      console.log("game:update", state.fen);
       setFen(state.fen);
       setTurn(state.turn);
     };

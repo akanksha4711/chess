@@ -262,6 +262,11 @@ io.on("connection", (socket) => {
         return ack?.({ ok: false, message: "Invalid move" });
       }
       room.lastMove = { from, to, san: move.san };
+      console.log(
+        "Players in the room",
+        room.players[0].name,
+        room.players[1].name,
+      );
       io.to(roomCode).emit("game:update", getPublicState(room));
       // check if the game is over or not
       if (room.game.isGameOver()) {
