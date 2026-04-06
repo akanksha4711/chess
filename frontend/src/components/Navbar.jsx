@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { Link, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { logout } from "../slices/authSlice";
 
 export const Navbar = () => {
@@ -11,14 +11,17 @@ export const Navbar = () => {
   }
 
   return (
-    <div>
+    <div className="bg-[url()] bg-cover bg-center h-screen w-screen">
       <div className="p-4 bg-blue-400 flex flex-row justify-between">
         <div>
           <Link to="/lobby">Lobby</Link>
         </div>
         <div>
           {user ? (
-            <button onClick={handleLogout}>Logout</button>
+            <div className="flex gap-4">
+              <NavLink to="/leaderboard">Leaderboard</NavLink>
+              <button onClick={handleLogout}>Logout</button>
+            </div>
           ) : (
             <div className="flex flex-row gap-4">
               <Link to="/login">Login</Link>
@@ -28,6 +31,7 @@ export const Navbar = () => {
         </div>
       </div>
       <div className="p-4">
+        {/* <div className="absolute inset-0 bg-white opacity-10"></div> */}
         <Outlet />
       </div>
     </div>

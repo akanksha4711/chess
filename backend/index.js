@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const { User } = require("./models/user.model");
 const { Chess } = require("chess.js");
 const { Game } = require("./models/game.model");
+const { leaderboardRouter } = require("./routes/leaderboard.routes");
 require("dotenv").config();
 
 const app = express();
@@ -22,6 +23,16 @@ app.use(
 );
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/leaderboard", leaderboardRouter);
+// app.post("api/v1/upload", verifyAuth, parser.single("file"), (req, res) => {
+//   // something inside upload.
+//   try {
+//     const url = req.file.path;
+//     return res.status(200).json({ imageUrl: url });
+//   } catch (err) {
+//     return res.status(500).json({ message: err.message });
+//   }
+// });
 
 const PORT = process.env.PORT || 8000;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -93,6 +104,13 @@ function getPublicState(room) {
   };
 }
 
+function getPublicClock(room) {
+  return {
+    ...room.clock,
+    roomCode: room.roomCode,
+  };
+}
+
 // helper function
 function getRoomCode(len = 6) {
   let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -115,7 +133,15 @@ const rooms = new Map();
 //    fen: new Chess().fen(),
 //    whiteId,
 //    blackId,
-//    lastMove
+//    lastMove,
+//    timeControle: { baseMs, incrementMs } // baseMs -> 5 min, incrementMs -> 0
+//    clock: {
+//      whiteMs: baseMs,
+//      blackMs: baseMs,
+//      active: 'w',
+//      lastSwitchAt: null // timestamp of the last move
+//      running: false
+//    }
 //  }
 
 async function saveGameDetailsToUser(room, result, reason) {
@@ -186,6 +212,17 @@ io.on("connection", (socket) => {
         socketId: socket.id,
         userId: socket.user._id,
       });
+      // All the clock related information
+      const baseMs = 5 * 60 * 1000;
+      const incrementMs = 0;
+      newRoom.timeControl = { baseMs, incrementMs };
+      newRoom.clock = {
+        whiteMs: baseMs,
+        blackMs: baseMs,
+        active: "w",
+        lastSwitchAt: null,
+        running: false,
+      };
       rooms.set(roomCode, newRoom);
       io.to(roomCode).emit("room:presence", getPublicRoom(newRoom));
       return ack?.({ ok: true, room: getPublicRoom(newRoom) });
@@ -227,8 +264,13 @@ io.on("connection", (socket) => {
         existingRoom.status = "ready";
         existingRoom.whiteId = existingRoom.players[0].userId;
         existingRoom.blackId = existingRoom.players[1].userId;
+        // Initializing the clock
+        existingRoom.clock.running = true;
+        existingRoom.clock.lastSwitchAt = Date.now();
+        existingRoom.clock.active = "w";
       }
       socket.join(roomCode);
+      io.to(roomCode).emit("clock:update", getPublicClock(existingRoom));
       io.to(roomCode).emit("room:presence", getPublicRoom(existingRoom));
       return ack?.({ ok: true, room: getPublicRoom(existingRoom) });
     } catch (err) {
@@ -244,6 +286,7 @@ io.on("connection", (socket) => {
     try {
       // Goal: remove the current user from the room
       // If room does not exist return with error: { ok: false, message: "Room does not exist" }
+      console.log(`User tried to leave room ${roomCode}`);
       const room = rooms.get(roomCode);
       if (!room) {
         return ack?.({ ok: false, message: "Room does not exist" });
@@ -273,7 +316,11 @@ io.on("connection", (socket) => {
   socket.on("game:state", (roomCode, ack) => {
     const room = rooms.get(roomCode);
     if (!room) return ack?.({ ok: false, message: "Room does not exist" });
-    return ack?.({ ok: true, state: getPublicState(room) });
+    return ack?.({
+      ok: true,
+      state: getPublicState(room),
+      clock: getPublicClock(room),
+    });
   });
 
   socket.on("game:move", async (roomCode, from, to, promotion, ack) => {
@@ -305,11 +352,42 @@ io.on("connection", (socket) => {
         return ack?.({ ok: false, message: "Invalid move" });
       }
       room.lastMove = { from, to, san: move.san };
-      console.log(
-        "Players in the room",
-        room.players[0].name,
-        room.players[1].name,
-      );
+      // Update the clock
+      const now = Date.now();
+      const elapsed = now - room.clock.lastSwitchAt;
+      if (player === "w") {
+        room.clock.whiteMs -= elapsed;
+        room.clock.whiteMs += room.timeControl.incrementMs;
+        room.clock.active = "b";
+      } else {
+        room.clock.blackMs -= elapsed;
+        room.clock.blackMs += room.timeControl.incrementMs;
+        room.clock.active = "w";
+      }
+      // clamp the times
+      room.clock.whiteMs = Math.max(0, room.clock.whiteMs);
+      room.clock.blackMs = Math.max(0, room.clock.blackMs);
+      room.clock.lastSwitchAt = now;
+      io.to(roomCode).emit("clock:update", getPublicClock(room));
+      if (room.clock.whiteMs === 0 || room.clock.blackMs === 0) {
+        // game is over
+        room.clock.running = false;
+        const result = room.clock.whiteMs === 0 ? "black" : "white";
+        const reason = "timeout";
+        const game = new Game({
+          roomCode,
+          whiteId: room.whiteId,
+          blackId: room.blackId,
+          reason,
+          result,
+          startedAt: new Date(room.createdAt),
+          endedAt: Date.now(),
+          duration: Date.now() - room.createdAt,
+        });
+        await game.save();
+        await saveGameDetailsToUser(room, result, reason);
+        io.to(roomCode).emit("game:over", result);
+      }
       io.to(roomCode).emit("game:update", getPublicState(room));
       // check if the game is over or not
       if (room.game.isGameOver()) {

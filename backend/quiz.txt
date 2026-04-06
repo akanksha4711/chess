@@ -1,0 +1,37 @@
+FULL-STACK CHESS GAME QUIZ (Medium) — QUESTIONS ONLY
+
+A) Auth, Cookies, Redux
+
+1) Why can’t you store your access token in Redux when using httpOnly cookies?
+2) Why do you call fetchMe() on app load?
+3) What does dispatch(thunk()).unwrap() do compared to await dispatch(thunk())?
+4) What should refresh do if refresh token is missing or invalid? (status code + why)
+5) Why is this wrong in axios interceptor: if (error.response === 401)? What’s the correct check?
+6) What does withCredentials: true do in axios?
+7) What problem happens if you redirect immediately when user is null on refresh?
+8) Why does console.log(userDoc) look weird but res.json(userDoc) looks clean?
+
+B) Socket.IO Basics
+
+9) What does socket.join(roomCode) do?
+10) Difference between io.emit(...), io.to(roomCode).emit(...), and socket.emit(...)?
+11) What is an ack callback? Explain using a room:join example.
+12) In Socket.IO auth middleware, what does next(new Error("Unauthorized")) do? Where is it seen on client?
+13) Why don’t we get req.cookies inside Socket.IO middleware? Where do cookies come from instead?
+14) Why attach connect_error handler in one central place instead of multiple pages?
+15) If connect_error Unauthorized happens, what is the simplest recovery flow using refresh + reconnect?
+16) Two tabs affect each other’s login. Why? What is the easiest testing solution?
+
+C) Chess Sync + Game State
+
+17) What is FEN and why is it useful for syncing the board?
+18) Why keep new Chess() on server and broadcast only plain objects?
+19) What does chess.js turn() return and how do you map it to which user can move?
+20) What is SAN in move.san? Give 2 example SAN moves.
+21) Why do you get “Do not know how to serialize a BigInt” when emitting the whole room object?
+22) In game:move, why must illegal moves be rejected before updating state?
+
+D) Leaderboard + Mongo
+
+23) Why is .lean() useful for leaderboard queries?
+24) Why is it better to select specific fields than to use -passwordHash for leaderboard?

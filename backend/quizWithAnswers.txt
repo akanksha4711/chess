@@ -1,0 +1,83 @@
+FULL-STACK CHESS GAME QUIZ (Medium) — Questions + Answers
+
+A) Auth, Cookies, Redux
+
+1) Q: Why can’t you store your access token in Redux when using httpOnly cookies?
+   A: Because httpOnly cookies are not accessible from JavaScript, so Redux can’t read them. The browser automatically sends them with requests. Also storing tokens in JS state increases XSS risk.
+
+2) Q: Why do you call fetchMe() on app load?
+   A: To restore the logged-in user after refresh by asking the server “who am I?” using the cookies. Redux state resets on refresh; cookies persist.
+
+3) Q: What does dispatch(thunk()).unwrap() do compared to await dispatch(thunk())?
+   A: unwrap() makes the promise behave like a normal async call: it resolves with the payload on success and throws (rejectWithValue value) on failure. Without unwrap, dispatch always resolves to an action object and doesn’t throw automatically.
+
+4) Q: What should refresh do if refresh token is missing or invalid? (status code + why)
+   A: Return 401 Unauthorized (not 500). Missing/invalid token means the client is not authenticated.
+
+5) Q: Why is this wrong in axios interceptor: if (error.response === 401)?
+   A: error.response is an object, not a status code. Correct is error.response?.status === 401.
+
+6) Q: What does withCredentials: true do in axios?
+   A: It tells the browser to include cookies in cross-origin requests and accept Set-Cookie responses (when CORS allows credentials).
+
+7) Q: What problem happens if you redirect immediately when user is null on refresh?
+   A: Race condition: Redux user is null for a moment before fetchMe completes, so you redirect to /login even though the session is valid. Fix by using a “loading/authChecked” state before redirecting.
+
+8) Q: Why does console.log(userDoc) look weird but res.json(userDoc) looks clean?
+   A: userDoc is a Mongoose Document with methods and internal fields. Express uses toJSON/toObject when serializing. console.log shows the full document instance.
+
+B) Socket.IO Basics
+
+9) Q: What does socket.join(roomCode) do?
+   A: Adds that socket connection to a Socket.IO room group so the server can broadcast to that group using io.to(roomCode).emit(...).
+
+10) Q: Difference between io.emit, io.to(roomCode).emit, and socket.emit?
+    A: io.emit sends to all connected clients. io.to(roomCode).emit sends to clients in that room. socket.emit sends only to that single socket (one client).
+
+11) Q: What is an ack callback? Example with room:join.
+    A: It’s a callback function the client passes to socket.emit. Server receives it as the last argument and calls it to reply only to that client.
+       Client: socket.emit("room:join", data, (res) => {...})
+       Server: socket.on("room:join", (data, ack) => ack({ok:true}))
+
+12) Q: In Socket.IO auth middleware, what does next(new Error("Unauthorized")) do? Where is it seen on client?
+    A: Rejects the connection attempt. Client receives it via socket.on("connect_error", err => ...).
+
+13) Q: Why don’t we get req.cookies inside Socket.IO middleware? Where do cookies come from?
+    A: Socket.IO doesn’t run Express middlewares like cookie-parser. Cookies are available in socket.handshake.headers.cookie (raw string) and must be parsed.
+
+14) Q: Why attach connect_error handler in one central place?
+    A: To avoid registering multiple listeners on remounts, which causes duplicate refresh calls/redirects and confusing behavior.
+
+15) Q: Simplest recovery flow if connect_error Unauthorized happens?
+    A: Call /auth/refresh (uses refresh cookie), then socket.connect() again. If refresh fails, redirect to login.
+
+16) Q: Why do two tabs affect each other’s login? Easiest testing solution?
+    A: Cookies are shared within the same browser profile. Use Incognito/another browser/another Chrome profile for second user.
+
+C) Chess Sync + Game State
+
+17) Q: What is FEN and why is it useful?
+    A: Forsyth-Edwards Notation; a string representing the full board position + turn + castling rights etc. Great for syncing because you can broadcast one string and both clients render the exact position.
+
+18) Q: Why keep new Chess() on server and broadcast only plain objects?
+    A: The server must validate rules and be authoritative. Chess instance is not serializable and may contain non-JSON values. Clients only need fen/turn/lastMove.
+
+19) Q: What does chess.js turn() return and how do you map it to user?
+    A: Returns "w" or "b". If turn is "w", only whiteId user can move; if "b", only blackId user can move.
+
+20) Q: What is SAN in move.san? Give examples.
+    A: Standard Algebraic Notation (human-readable move). Examples: "e4", "Nf3", "Bxe6", "O-O", "Qh7#".
+
+21) Q: Why BigInt serialization error when emitting whole room object?
+    A: You emitted non-serializable data (Chess instance / complex objects / maybe BigInt inside). JSON cannot serialize BigInt or class instances. Send a “publicRoom” plain object instead.
+
+22) Q: Why reject illegal moves before updating state?
+    A: Otherwise you’d change game state/turn/clock on invalid actions, causing desync and unfair play.
+
+D) Leaderboard + Mongo
+
+23) Q: Why is lean() useful for leaderboard queries?
+    A: Returns plain JS objects (no Mongoose Documents), faster and less memory; good for read-only lists.
+
+24) Q: Why select specific fields instead of -passwordHash?
+    A: Safer (no accidental sensitive data leak) and smaller payload. Only send what UI needs: name/avatar/stats.
