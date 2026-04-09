@@ -33,6 +33,7 @@ export const Leaderboard = () => {
             <th>Losses</th>
             <th>Games Played</th>
             <th>Streak</th>
+            <th>Rating</th>
           </tr>
         </thead>
         <tbody>
@@ -48,6 +49,7 @@ export const Leaderboard = () => {
               <td>{u.stats.losses}</td>
               <td>{u.stats.gamesPlayed}</td>
               <td>{u.stats.currentStreak}</td>
+              <td>{u.stats.rating}</td>
             </tr>
           ))}
         </tbody>

@@ -9,6 +9,7 @@ import { useDispatch } from "react-redux";
 import { fetchMe } from "./slices/authSlice";
 import { Room } from "./pages/Room";
 import { Leaderboard } from "./pages/Leaderboard";
+import { Guest } from "./pages/Guest";
 
 function App() {
   const dispatch = useDispatch();
@@ -22,6 +23,7 @@ function App() {
       <Route element={<Navbar />}>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/guest" element={<Guest />} />
         <Route element={<ProtectedRoutes />}>
           <Route path="/lobby" element={<Lobby />} />
           <Route path="/rooms/:roomCode" element={<Room />} />

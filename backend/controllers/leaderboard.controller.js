@@ -4,7 +4,7 @@ const leaderboard = async (req, res) => {
   try {
     const users = await User.find()
       .select("-passwordHash")
-      .sort({ "stats.wins": -1 })
+      .sort({ "stats.rating": -1 })
       .limit(50)
       .lean();
 

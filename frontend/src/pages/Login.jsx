@@ -26,7 +26,7 @@ export const Login = () => {
 
   return (
     <div className="flex items-center justify-center h-screen">
-      <div className="p-10 border border-black rounded">
+      <div className="flex flex-col gap-4 p-10 border border-black rounded">
         <form onSubmit={handleSubmit} className="flex flex-col gap-10">
           <label>
             Email
@@ -50,6 +50,17 @@ export const Login = () => {
             Login
           </button>
         </form>
+        <div className="flex gap-2 items-center">
+          <div className="border w-[40%]"></div>
+          OR
+          <div className="border w-[40%]"></div>
+        </div>
+        <button
+          onClick={() => navigate("/guest")}
+          className="bg-blue-400 p-2 rounded"
+        >
+          Join as Guest
+        </button>
       </div>
     </div>
   );

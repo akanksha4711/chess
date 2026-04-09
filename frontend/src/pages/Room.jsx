@@ -24,8 +24,13 @@ export const Room = () => {
   const [whiteMs, setWhiteMs] = useState(null);
   const [blackMs, setBlackMs] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
 
-  const user = useSelector((state) => state.auth.user);
+  const guest = JSON.parse(localStorage.getItem("guest"));
+  const user = useSelector((state) => state.auth.user) || {
+    _id: guest?.id,
+    name: guest?.name,
+  };
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,9 +55,18 @@ export const Room = () => {
       setWhiteMs(response?.clock?.whiteMs);
       setBlackMs(response?.clock?.blackMs);
     });
+
+    socket.emit("chat:history", roomCode, (response) => {
+      if (!response?.ok) {
+        alert(response?.message || "Failed top fetch history");
+        return;
+      }
+      setMessages(response?.messages);
+    });
   }, [roomCode, user._id]);
 
   useEffect(() => {
+    connectSocket();
     const onPresence = (data) => {
       setRoom(data);
     };
@@ -82,11 +96,18 @@ export const Room = () => {
 
     socket.on("clock:update", onClock);
 
+    function onChat(message) {
+      setMessages((prev) => [...prev, message]);
+    }
+
+    socket.on("chat:message", onChat);
+
     return () => {
       socket.off("room:presence", onPresence);
       socket.off("game:update", onUpdate);
       socket.off("game:over", onEnd);
       socket.off("clock:update", onClock);
+      socket.off("chat:message", onChat);
     };
   }, [roomCode, room?.whiteId, user._id]);
 
@@ -127,6 +148,17 @@ export const Room = () => {
     const m = String(Math.floor(total / 60)).padStart(2, "0");
     const s = String(Math.floor(total % 60)).padStart(2, "0");
     return `${m}:${s}`;
+  }
+
+  function onSend() {
+    connectSocket();
+    socket.emit("chat:send", roomCode, text.trim(), (response) => {
+      if (!response?.ok) {
+        alert(response?.message || "Failed to send the message");
+        return;
+      }
+      setText("");
+    });
   }
 
   return (
@@ -302,14 +334,29 @@ export const Room = () => {
               <div className="h-[45px] border flex items-center justify-center text-xl font-bold">
                 Chat
               </div>
-              <div className="h-[500px]">
+              <div className="h-[500px] flex flex-col gap-2 pt-2 pb-2 overflow-scroll">
                 {messages.map((m) => (
-                  <div>{m.text}</div>
+                  <div
+                    className={`${user._id.toString() === m.userId ? "bg-blue-200" : "bg-gray-200"} flex flex-col gap-1 p-2 rounded ml-2 mr-2`}
+                  >
+                    <div className="flex gap-1 items-center font-bold text-blue-800">
+                      <FaUserCircle size={18} />
+                      {m.name}
+                      {m.timestamp}
+                    </div>
+                    {m.text}
+                  </div>
                 ))}
               </div>
               <div className="h-[80px] border flex items-center justify-between p-4 text-xl">
-                <input className="border rounded p-2" />
-                <button className="bg-blue-400 p-2 rounded">Send</button>
+                <input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  className="border rounded p-2"
+                />
+                <button onClick={onSend} className="bg-blue-400 p-2 rounded">
+                  Send
+                </button>
               </div>
             </div>
           </>
