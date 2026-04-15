@@ -20,10 +20,10 @@ export const Room = () => {
   const [room, setRoom] = useState(null);
   const [fen, setFen] = useState(null);
   const [turn, setTurn] = useState(null);
-  const [color, setColor] = useState(null);
   const [whiteMs, setWhiteMs] = useState(null);
   const [blackMs, setBlackMs] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [isSpectator, setIsSpectator] = useState(false);
   const [text, setText] = useState("");
 
   const guest = JSON.parse(localStorage.getItem("guest"));
@@ -40,6 +40,11 @@ export const Room = () => {
       if (!response?.ok)
         return alert(response?.message || "Failed to join room");
       setRoom(response.room);
+      setIsSpectator(
+        response?.room?.spectators?.some(
+          (s) => s.userId.toString() === user._id.toString(),
+        ),
+      );
     });
 
     socket.emit("game:state", roomCode, (response) => {
@@ -47,11 +52,6 @@ export const Room = () => {
         return alert(response?.message || "Failed to fetch game state");
       setFen(response?.state?.fen);
       setTurn(response?.state?.turn);
-      setColor(
-        user._id?.toString() === response?.state?.whiteId?.toString()
-          ? "White"
-          : "Black",
-      );
       setWhiteMs(response?.clock?.whiteMs);
       setBlackMs(response?.clock?.blackMs);
     });
@@ -128,6 +128,7 @@ export const Room = () => {
   function onDrop(sourceSquare, targetSquare) {
     connectSocket();
     if (!fen) return false;
+    if (isSpectator) return false;
     socket.emit(
       "game:move",
       roomCode,

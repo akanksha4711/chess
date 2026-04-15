@@ -100,6 +100,7 @@ function getPublicRoom(room) {
       name: p.name,
       role: p.role,
     })),
+    spectators: room.spectators,
     status: room.status,
     createdAt: room.createdAt,
     fen: room.fen,
@@ -148,6 +149,7 @@ const rooms = new Map();
 //  {
 //    roomCode,
 //    players: [{userId, socketId, name, role}],
+//.   spectators: [{userId, socketId, name, role}]
 //    status: "waiting" | "ready",
 //    createdAt,
 //    game: new Chess(),
@@ -239,6 +241,7 @@ io.on("connection", (socket) => {
       const newRoom = {
         roomCode,
         players: [],
+        spectators: [],
         status: "waiting",
         createdAt: Date.now(),
         game: new Chess(),
@@ -284,6 +287,12 @@ io.on("connection", (socket) => {
       const already = existingRoom.players.some(
         (p) => p.userId.toString() === socket.user._id.toString(),
       );
+      const isSpectator = existingRoom.spectators.some(
+        (s) => s.userId.toString() === socket.user._id.toString(),
+      );
+      if (isSpectator) {
+        return ack?.({ ok: true, room: getPublicRoom(existingRoom) });
+      }
       if (!already) {
         if (existingRoom.players.length === 2) {
           return ack?.({ ok: false, message: "Room is full" });
@@ -325,6 +334,44 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("room:join-spectator", (roomCode, ack) => {
+    try {
+      console.log(`User tried to join room as spectator ${roomCode}`);
+      const existingRoom = rooms.get(roomCode);
+      if (!existingRoom)
+        return ack?.({ ok: false, message: "Room does not exist" });
+      const already = existingRoom.spectators.some(
+        (s) => s.userId.toString() === socket.user._id.toString(),
+      );
+      if (already) {
+        existingRoom.spectators = existingRoom.spectators.map((s) => {
+          if (s.userId.toString() === socket.user._id.toString()) {
+            return { ...s, socketId: socket.id };
+          }
+          return p;
+        });
+      } else {
+        if (existingRoom.spectators.length === 50) {
+          return ack?.({ ok: false, message: "Room is full" });
+        }
+        existingRoom.spectators.push({
+          userId: socket.user._id,
+          name: socket.user.name,
+          role: socket.user.role,
+          socketId: socket.id,
+        });
+      }
+      socket.join(roomCode);
+      io.to(roomCode).emit("room:presence", getPublicRoom(existingRoom));
+      return ack?.({ ok: true, room: getPublicRoom(existingRoom) });
+    } catch (err) {
+      return ack?.({
+        ok: false,
+        message: err.message || "Unable to join room as a spectator",
+      });
+    }
+  });
+
   // "room:leave" - event handler
   socket.on("room:leave", (roomCode, ack) => {
     try {
@@ -338,6 +385,9 @@ io.on("connection", (socket) => {
       // Remove the user by filtering out the player from the room.players
       room.players = room.players.filter(
         (p) => p.userId.toString() !== socket.user._id.toString(),
+      );
+      room.spectators = room.spectators.filter(
+        (s) => s.userId.toString() === socket.user._id.toString(),
       );
       // Update the status of the room
       room.status = room.players.length === 2 ? "ready" : "waiting";
@@ -485,9 +535,13 @@ io.on("connection", (socket) => {
       if (!clean) return ack?.({ ok: false, message: "Empty message" });
       if (clean.length > 300)
         return ack?.({ ok: false, message: "Text too long" });
-      const isMember = room.players.some(
+      const isPlayer = room.players.some(
         (p) => p.userId.toString() === socket.user._id.toString(),
       );
+      const isSpectator = room.spectators.some(
+        (s) => s.userId.toString() === socket.user._id.toString(),
+      );
+      const isMember = isPlayer || isSpectator;
       if (!isMember) return ack?.({ ok: false, message: "Not a valid user" });
       const message = {
         userId: socket.user._id.toString(),
@@ -518,6 +572,17 @@ io.on("connection", (socket) => {
         ok: false,
         message: err.message || "Failed to get chat history",
       });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    for (let [roomCode, room] of rooms.entries()) {
+      room.players = room.players.filter((p) => p.socketId !== socket.id);
+      if (room.players.length === 0) {
+        rooms.delete(roomCode);
+        continue;
+      }
+      room.status = room.players.length === 2 ? "ready" : "waiting";
     }
   });
 });

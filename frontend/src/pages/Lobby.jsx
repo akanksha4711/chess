@@ -32,6 +32,16 @@ export const Lobby = () => {
     });
   }
 
+  function joinRoomSpectator() {
+    connectSocket();
+    console.log("request to join as spectator");
+    socket.emit("room:join-spectator", roomCode, (response) => {
+      if (!response?.ok)
+        return alert(response.message || "Failed to join room");
+      navigate(`/rooms/${response.room.roomCode}`);
+    });
+  }
+
   return (
     <div className="flex flex-col justify-center items-center gap-16">
       <div className="flex flex-col gap-4 items-center">
@@ -75,7 +85,7 @@ export const Lobby = () => {
           />
           <h2 className="text-2xl text-[#4f7a41] font-bold">Join Room</h2>
           <p className="text-xl text-gray-600 w-[70%] text-center">
-            Enter a room code to join an existing room
+            Enter a room code to join an existing room as a player or spectator
           </p>
           <input
             className="p-2 border rounded w-[100%] text-xl"
@@ -89,7 +99,14 @@ export const Lobby = () => {
             className="bg-[#4f7a41] p-4 rounded text-white font-bold text-xl justify-center flex items-center gap-4 w-[100%]"
           >
             <FaArrowRight />
-            Join Room
+            Join as Player
+          </button>
+          <button
+            onClick={joinRoomSpectator}
+            className="bg-green-500 p-4 rounded text-white font-bold text-xl justify-center flex items-center gap-4 w-[100%]"
+          >
+            <FaArrowRight />
+            Join as Spectator
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { api } from "../api/client";
+import { socket } from "../socket";
 
 const initialState = {
   user: null,
@@ -34,6 +35,7 @@ export const signup = createAsyncThunk(
 
 export const logout = createAsyncThunk("auth/logout", async (_, thunkAPI) => {
   try {
+    socket.disconnect();
     const res = await api.post("/auth/logout");
     return res.data;
   } catch (err) {
