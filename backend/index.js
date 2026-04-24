@@ -12,12 +12,13 @@ const { Game } = require("./models/game.model");
 const { leaderboardRouter } = require("./routes/leaderboard.routes");
 require("dotenv").config();
 
+const URL = process.env.CLIENT_URL;
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [URL || "http://localhost:5173"],
     credentials: true,
   }),
 );
@@ -41,7 +42,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173"],
+    origin: [URL || "http://localhost:5173"],
     credentials: true,
   },
 });
