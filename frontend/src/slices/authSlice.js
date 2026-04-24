@@ -13,6 +13,7 @@ export const login = createAsyncThunk(
   "auth/login",
   async ({ email, password }, thunkAPI) => {
     try {
+      socket.disconnect();
       const res = await api.post("/auth/login", { email, password });
       return res.data;
     } catch (err) {
