@@ -26,7 +26,7 @@ const login = async (req, res) => {
     res.cookie("accessToken", accessToken, {
       httpOnly: true, // javascript cannot read the cookie, only browser can read it
       secure: process.env.NODE_ENV === "production", // send cookie only to https secure sites
-      sameSite: "none",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 15 * 60 * 1000,
     });
     const refreshToken = jwt.sign(
@@ -37,7 +37,7 @@ const login = async (req, res) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true, // javascript cannot read the cookie, only browser can read it
       secure: process.env.NODE_ENV === "production", // send cookie only to https secure sites
-      sameSite: "none",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/api/v1/auth/refresh",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
