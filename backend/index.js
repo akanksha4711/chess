@@ -20,6 +20,7 @@ app.use(
   cors({
     origin: CLIENT_URL || "http://localhost:5173",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
 );
 app.use((req, res, next) => {
@@ -63,6 +64,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: CLIENT_URL || "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   },
 });
