@@ -22,6 +22,13 @@ app.use(
     credentials: true,
   }),
 );
+app.options(
+  "*",
+  cors({
+    origin: URL || "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/leaderboard", leaderboardRouter);
