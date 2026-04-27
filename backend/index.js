@@ -259,9 +259,11 @@ io.on("connection", (socket) => {
       let roomCode = getRoomCode();
       // Creating new room code until we get to a unique code
       // Find a better approach for scaling
+      console.log(`User tried to join the room with ${roomCode}`);
       while (rooms.has(roomCode)) {
         roomCode = getRoomCode();
       }
+      console.log(`Final room code ${roomCode}`);
       const newRoom = {
         roomCode,
         players: [],
@@ -295,6 +297,7 @@ io.on("connection", (socket) => {
       newRoom.chat = [];
       rooms.set(roomCode, newRoom);
       io.to(roomCode).emit("room:presence", getPublicRoom(newRoom));
+      console.log(getPublicRoom(newRoom));
       return ack?.({ ok: true, room: getPublicRoom(newRoom) });
     } catch (err) {
       return ack?.({ ok: false, message: err.message || "Create room failed" });
