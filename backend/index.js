@@ -12,23 +12,29 @@ const { Game } = require("./models/game.model");
 const { leaderboardRouter } = require("./routes/leaderboard.routes");
 require("dotenv").config();
 
-const URL = process.env.CLIENT_URL;
+const CLIENT_URL = process.env.CLIENT_URL;
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: URL || "http://localhost:5173",
+    origin: CLIENT_URL || "http://localhost:5173",
     credentials: true,
   }),
 );
-app.options(
-  "*",
-  cors({
-    origin: URL || "http://localhost:5173",
-    credentials: true,
-  }),
-);
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Origin", CLIENT_ORIGIN);
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    );
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/leaderboard", leaderboardRouter);
@@ -49,7 +55,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: URL || "http://localhost:5173",
+    origin: CLIENT_URL || "http://localhost:5173",
     credentials: true,
   },
 });
