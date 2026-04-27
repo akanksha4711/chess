@@ -66,6 +66,7 @@ const io = new Server(server, {
     origin: CLIENT_URL || "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
+    transports: ["polling"],
   },
 });
 
