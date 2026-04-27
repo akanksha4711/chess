@@ -89,6 +89,7 @@ io.use(async (socket, next) => {
     // cookies = {cookie1: value1, cookie2: value2, accessToken: tokenValue, .......}
     let { accessToken } = cookies;
     let { guestId, guestName } = socket.handshake.auth;
+    console.log(`User tried to connect to socket ${socket.id}`);
     if (accessToken) {
       const payload = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
       // payload : { sub: value user._id, role: "USER" | "ADMIN" }
@@ -97,6 +98,7 @@ io.use(async (socket, next) => {
         return next(new Error("Unable to find user"));
       }
       socket.user = user;
+      console.log(`User joined with accesToken`);
       return next();
     }
     if (guestId && guestName) {
@@ -105,6 +107,7 @@ io.use(async (socket, next) => {
         name: guestName,
         role: "guest",
       };
+      console.log(`User joined as guest`);
       return next();
     }
     if (!accessToken) {
