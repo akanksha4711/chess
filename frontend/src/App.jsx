@@ -10,6 +10,7 @@ import { fetchMe } from "./slices/authSlice";
 import { Room } from "./pages/Room";
 import { Leaderboard } from "./pages/Leaderboard";
 import { Guest } from "./pages/Guest";
+import NotFoundProtectedRoute from "./components/NotFoundProtectedRoute";
 
 function App() {
   const dispatch = useDispatch();
@@ -20,6 +21,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path="*" element={<NotFoundProtectedRoute />} />
       <Route element={<Navbar />}>
         <Route path="/" element={<div>Home page</div>} />
         <Route path="/login" element={<Login />} />
