@@ -38,6 +38,13 @@ app.use((req, res, next) => {
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/leaderboard", leaderboardRouter);
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res
+    .status(err.status || 500)
+    .json({ message: err.message || "Server error" });
+});
 // app.post("api/v1/upload", verifyAuth, parser.single("file"), (req, res) => {
 //   // something inside upload.
 //   try {
