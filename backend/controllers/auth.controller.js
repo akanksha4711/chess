@@ -26,6 +26,7 @@ const login = async (req, res) => {
     res.cookie("accessToken", accessToken, {
       httpOnly: true, // javascript cannot read the cookie, only browser can read it
       secure: process.env.NODE_ENV === "production", // send cookie only to https secure sites
+      sameSite: "none",
       maxAge: 15 * 60 * 1000,
     });
     const refreshToken = jwt.sign(
@@ -36,6 +37,7 @@ const login = async (req, res) => {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true, // javascript cannot read the cookie, only browser can read it
       secure: process.env.NODE_ENV === "production", // send cookie only to https secure sites
+      sameSite: "none",
       path: "/api/v1/auth/refresh",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -82,10 +84,12 @@ const logout = (req, res) => {
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
     });
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
       path: "/api/v1/auth/refresh",
     });
     return res.status(200).json({ message: "OK" });
