@@ -25,7 +25,7 @@ app.use(
 );
 app.use((req, res, next) => {
   if (req.method === "OPTIONS") {
-    res.header("Access-Control-Allow-Origin", CLIENT_ORIGIN);
+    res.header("Access-Control-Allow-Origin", CLIENT_URL);
     res.header("Access-Control-Allow-Credentials", "true");
     res.header(
       "Access-Control-Allow-Methods",
